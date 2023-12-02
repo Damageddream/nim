@@ -101,7 +101,9 @@ class NimAI():
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-        raise NotImplementedError
+        if self.q.get((tuple(state),action), None):
+            return self.q[tuple(state),action]
+        return 0
 
     def update_q_value(self, state, action, old_q, reward, future_rewards):
         """
@@ -118,7 +120,7 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-        raise NotImplementedError
+        self.q[(tuple(state),action)] = old_q + (self.alpha * ((reward + future_rewards) - old_q))
 
     def best_future_reward(self, state):
         """
@@ -130,7 +132,16 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        raise NotImplementedError
+        possible_actions = Nim.available_actions(state)
+        best_reward = 0
+        for action in possible_actions:
+            temp = 0
+            if ((tuple(state),action)) in self.q:
+                temp = self.q[tuple(state), action]
+                if temp > best_reward:
+                    best_reward = temp
+            
+        return best_reward
 
     def choose_action(self, state, epsilon=True):
         """
@@ -147,7 +158,25 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+        chosen_action = ()
+        possible_actions = Nim.available_actions(state)
+
+        if epsilon:
+            roll_for_random_action = random.random()
+            if roll_for_random_action <= 0.1:
+                chosen_action = random.choice(list(possible_actions))
+                return chosen_action
+
+        for action in possible_actions:
+            if (tuple(state),action) in self.q:
+                if not chosen_action:
+                    chosen_action = action
+                if self.q[tuple(state),action] > self.q[tuple(state), chosen_action]:
+                    chosen_action = action
+        if not chosen_action:
+            chosen_action = random.choice(list(possible_actions))
+
+        return chosen_action
 
 
 def train(n):
